@@ -40,16 +40,21 @@ $sexoAuditores = rows($pdo, "
 ");
 
 $idadeMediaGeral = scalar_query($pdo, "
-    SELECT ROUND(AVG(TIMESTAMPDIFF(YEAR, data_nascimento, CURDATE())), 1)
+    SELECT ROUND(AVG(idade), 1)
     FROM vw_servidores_dashboard
-    WHERE ativo = 1 AND data_nascimento IS NOT NULL
+    WHERE ativo = 1
+      AND idade IS NOT NULL
+      AND idade > 0
 ");
 
 $idadeMediaPorGrupo = rows($pdo, "
-    SELECT grupo_ocupacional,
-           ROUND(AVG(TIMESTAMPDIFF(YEAR, data_nascimento, CURDATE())), 1) AS idade_media
+    SELECT 
+        grupo_ocupacional,
+        ROUND(AVG(idade), 1) AS idade_media
     FROM vw_servidores_dashboard
-    WHERE ativo = 1 AND data_nascimento IS NOT NULL
+    WHERE ativo = 1
+      AND idade IS NOT NULL
+      AND idade > 0
     GROUP BY grupo_ocupacional
 ");
 
@@ -58,8 +63,7 @@ $aposentadoriasEsperadas = rows($pdo, "
     FROM vw_servidores_dashboard
     WHERE ativo = 1
       AND grupo_ocupacional IN ('AUDITOR','TECNICO')
-      AND data_nascimento IS NOT NULL
-      AND TIMESTAMPDIFF(YEAR, data_nascimento, CURDATE()) >= 60
+      AND idade >= 60
     GROUP BY grupo_ocupacional
 ");
 
@@ -84,9 +88,27 @@ $distribuicaoClasseNivel = rows($pdo, "
 
 $licencas = rows($pdo, "
     SELECT
-        COUNT(CASE WHEN dias_licenca_medica > 0 THEN 1 END) AS servidores_com_licenca,
-        COALESCE(SUM(dias_licenca_medica), 0) AS total_dias_licenca,
-        COUNT(CASE WHEN cid IS NOT NULL AND UPPER(TRIM(cid)) REGEXP '^F[0-9]' THEN 1 END) AS servidores_com_cid_f
+        SUM(CASE 
+            WHEN COALESCE(dias_licenca_medica, 0) > 0 
+            THEN 1 
+            ELSE 0 
+        END) AS servidores_com_licenca,
+
+        COALESCE(SUM(CASE 
+            WHEN COALESCE(dias_licenca_medica, 0) > 0 
+            THEN dias_licenca_medica 
+            ELSE 0 
+        END), 0) AS total_dias_licenca,
+
+        SUM(CASE 
+            WHEN COALESCE(dias_licenca_medica, 0) > 0
+             AND cid IS NOT NULL 
+             AND TRIM(cid) <> ''
+             AND UPPER(TRIM(cid)) REGEXP '^F[0-9]' 
+            THEN 1 
+            ELSE 0 
+        END) AS servidores_com_cid_f
+
     FROM vw_servidores_dashboard
     WHERE ativo = 1
 ")[0] ?? [
@@ -104,7 +126,7 @@ if ($isAdmin) {
             grupo_ocupacional,
             cargo_fiscal,
             sexo,
-            TIMESTAMPDIFF(YEAR, data_nascimento, CURDATE()) AS idade,
+            idade,
             dias_licenca_medica,
             cid,
             CASE WHEN cid IS NOT NULL AND UPPER(TRIM(cid)) REGEXP '^F[0-9]' THEN 1 ELSE 0 END AS cid_f
