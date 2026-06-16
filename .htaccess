@@ -1,0 +1,5 @@
+# Se esta pasta for colocada no servidor por engano como raiz pública,
+# bloqueia acesso direto a arquivos sensíveis fora de /public.
+<FilesMatch "^(database|auth)\.php$">
+    Require all denied
+</FilesMatch>
