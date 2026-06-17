@@ -4,7 +4,7 @@ require __DIR__ . '/../../config/database.php';
 
 $isAdmin = is_logged_in() && (current_user()['role'] ?? '') === 'admin';
 
-function scalar_query(PDO $pdo, string $sql, array $params = []): int|float|string|null
+function scalar_query(PDO $pdo, string $sql, array $params = [])
 {
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);

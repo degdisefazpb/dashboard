@@ -21,7 +21,7 @@ require __DIR__ . '/../config/auth.php';
                 <div>
                     <p class="eyebrow">Dashboard Gerencial</p>
                     <h1>Grupo Ocupacional Servidor Fiscal Tributário</h1>
-                    <p class="subtitle">Indicadores consolidados de auditores, técnicos e comissionados.</p>
+                    <p class="subtitle">Indicadores consolidados de auditores, técnicos, comissionados e terceirizados.</p>
                 </div>
             </div>
 
@@ -52,6 +52,11 @@ require __DIR__ . '/../config/auth.php';
                 <article class="card metric">
                     <p>Comissionados</p>
                     <h2 id="qtdComissionados">0</h2>
+                    <small>Total no grupo ocupacional</small>
+                </article>
+                <article class="card metric">
+                    <p>Terceirizados</p>
+                    <h2 id="qtdTerceirizados">0</h2>
                     <small>Total no grupo ocupacional</small>
                 </article>
                 <article class="card metric">

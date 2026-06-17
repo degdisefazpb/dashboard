@@ -10,6 +10,7 @@ const labelsPadrao = {
     AUDITOR: 'Auditores',
     TECNICO: 'Técnicos',
     COMISSIONADO: 'Comissionados',
+    TERCEIRIZADO: 'Terceirizados',
     AFTE: 'AFTE',
     AFTME: 'AFTME',
     NAO_INFORMADO: 'Não informado',
@@ -130,6 +131,7 @@ function renderizarDashboard(payload) {
     $('#qtdAuditores').textContent = formatarNumero(valorPorChave(totalPorGrupo, 'grupo_ocupacional', 'AUDITOR'));
     $('#qtdTecnicos').textContent = formatarNumero(valorPorChave(totalPorGrupo, 'grupo_ocupacional', 'TECNICO'));
     $('#qtdComissionados').textContent = formatarNumero(valorPorChave(totalPorGrupo, 'grupo_ocupacional', 'COMISSIONADO'));
+    $('#qtdTerceirizados').textContent = formatarNumero(valorPorChave(totalPorGrupo, 'grupo_ocupacional', 'TERCEIRIZADO'));
     $('#idadeMedia').textContent = dados.idade_media_geral ? `${String(dados.idade_media_geral).replace('.', ',')} anos` : '-';
 
     $('#qtdAFTE').textContent = formatarNumero(valorPorChave(auditoresPorCargo, 'cargo_fiscal', 'AFTE'));
