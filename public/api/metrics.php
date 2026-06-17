@@ -89,35 +89,51 @@ $distribuicaoClasseNivel = rows($pdo, "
 $licencas = rows($pdo, "
     SELECT
         SUM(CASE 
-            WHEN COALESCE(dias_licenca_medica, 0) > 0 
-            THEN 1 
-            ELSE 0 
+            WHEN dias_restantes_licenca > 0 
+            THEN 1 ELSE 0 
         END) AS servidores_com_licenca,
 
-        COALESCE(SUM(CASE 
-            WHEN COALESCE(dias_licenca_medica, 0) > 0 
-            THEN dias_licenca_medica 
-            ELSE 0 
-        END), 0) AS total_dias_licenca,
-
         SUM(CASE 
-            WHEN COALESCE(dias_licenca_medica, 0) > 0
+            WHEN dias_restantes_licenca > 0
              AND cid IS NOT NULL 
              AND TRIM(cid) <> ''
              AND UPPER(TRIM(cid)) REGEXP '^F[0-9]' 
-            THEN 1 
-            ELSE 0 
+            THEN 1 ELSE 0 
         END) AS servidores_com_cid_f
 
-    FROM vw_servidores_dashboard
-    WHERE ativo = 1
+    FROM (
+        SELECT
+            cid,
+            CASE
+                WHEN data_final_licenca IS NOT NULL
+                THEN GREATEST(DATEDIFF(data_final_licenca, CURDATE()), 0)
+                ELSE 0
+            END AS dias_restantes_licenca
+        FROM (
+            SELECT
+                cid,
+                CASE
+                    WHEN licenca IS NULL OR TRIM(licenca) = '' THEN NULL
+
+                    WHEN TRIM(licenca) REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
+                    THEN DATE(TRIM(licenca))
+
+                    WHEN TRIM(licenca) REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}$'
+                    THEN STR_TO_DATE(TRIM(licenca), '%d/%m/%Y')
+
+                    ELSE NULL
+                END AS data_final_licenca
+            FROM vw_servidores_dashboard
+            WHERE ativo = 1
+        ) base
+    ) calculado
 ")[0] ?? [
     'servidores_com_licenca' => 0,
-    'total_dias_licenca' => 0,
     'servidores_com_cid_f' => 0,
 ];
 
 $detalhesLicencas = [];
+
 if ($isAdmin) {
     $detalhesLicencas = rows($pdo, "
         SELECT
@@ -127,13 +143,57 @@ if ($isAdmin) {
             cargo_fiscal,
             sexo,
             idade,
-            dias_licenca_medica,
+            licenca,
+            DATE_FORMAT(data_final_licenca, '%d/%m/%Y') AS data_final_licenca_formatada,
+            dias_restantes_licenca AS dias_licenca_medica,
             cid,
-            CASE WHEN cid IS NOT NULL AND UPPER(TRIM(cid)) REGEXP '^F[0-9]' THEN 1 ELSE 0 END AS cid_f
-        FROM vw_servidores_dashboard
-        WHERE ativo = 1
-          AND (dias_licenca_medica > 0 OR (cid IS NOT NULL AND cid <> ''))
-        ORDER BY dias_licenca_medica DESC, nome ASC
+            CASE 
+                WHEN cid IS NOT NULL 
+                 AND TRIM(cid) <> ''
+                 AND UPPER(TRIM(cid)) REGEXP '^F[0-9]' 
+                THEN 1 
+                ELSE 0 
+            END AS cid_f
+        FROM (
+            SELECT
+                matricula,
+                nome,
+                grupo_ocupacional,
+                cargo_fiscal,
+                sexo,
+                idade,
+                licenca,
+                cid,
+
+                CASE
+                    WHEN licenca IS NULL OR TRIM(licenca) = '' THEN NULL
+
+                    WHEN TRIM(licenca) REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
+                    THEN DATE(TRIM(licenca))
+
+                    WHEN TRIM(licenca) REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}$'
+                    THEN STR_TO_DATE(TRIM(licenca), '%d/%m/%Y')
+
+                    ELSE NULL
+                END AS data_final_licenca,
+
+                CASE
+                    WHEN licenca IS NULL OR TRIM(licenca) = '' THEN 0
+
+                    WHEN TRIM(licenca) REGEXP '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
+                    THEN GREATEST(DATEDIFF(DATE(TRIM(licenca)), CURDATE()), 0)
+
+                    WHEN TRIM(licenca) REGEXP '^[0-9]{2}/[0-9]{2}/[0-9]{4}$'
+                    THEN GREATEST(DATEDIFF(STR_TO_DATE(TRIM(licenca), '%d/%m/%Y'), CURDATE()), 0)
+
+                    ELSE 0
+                END AS dias_restantes_licenca
+
+            FROM vw_servidores_dashboard
+            WHERE ativo = 1
+        ) dados
+        WHERE dias_restantes_licenca > 0
+        ORDER BY dias_restantes_licenca DESC, nome ASC
         LIMIT 500
     ");
 }

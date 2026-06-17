@@ -150,7 +150,6 @@ function renderizarDashboard(payload) {
     $('#gestaoMulheres').textContent = formatarNumero(gestaoMulheres);
 
     $('#licencaServidores').textContent = formatarNumero(licencas.servidores_com_licenca);
-    $('#licencaDias').textContent = formatarNumero(licencas.total_dias_licenca);
     $('#licencaCidF').textContent = formatarNumero(licencas.servidores_com_cid_f);
 
     criarOuAtualizarChart(

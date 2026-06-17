@@ -137,7 +137,6 @@ require __DIR__ . '/../config/auth.php';
                     <h3>Licença médica</h3>
                     <div class="mini-grid three">
                         <div><span>Servidores com licença</span><strong id="licencaServidores">0</strong></div>
-                        <div><span>Total de dias</span><strong id="licencaDias">0</strong></div>
                         <div><span>Registros com CID-F</span><strong id="licencaCidF">0</strong></div>
                     </div>
                     <p class="helper">CID-F é exibido publicamente apenas como total consolidado.</p>
@@ -161,9 +160,9 @@ require __DIR__ . '/../config/auth.php';
                                 <th>Cargo</th>
                                 <th>Sexo</th>
                                 <th>Idade</th>
-                                <th>Dias</th>
+                                <th>Dias restantes de Licença</th>
                                 <th>CID</th>
-                                <th>CID-F?</th>
+                                <th>CID-F</th>
                             </tr>
                         </thead>
                         <tbody id="tabelaLicencas"></tbody>
