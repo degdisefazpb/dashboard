@@ -9,21 +9,17 @@ require __DIR__ . '/../config/auth.php';
     <title>Dashboard Gerencial - Grupo Ocupacional Servidor Fiscal Tributário</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js"></script>
 </head>
 <body>
     <div class="app-shell">
         <header class="topbar">
-            <div class="brand">
-                <div class="logo-box">
-                    <img src="assets/img/logo.png" alt="Logo" onerror="this.style.display='none'; this.parentElement.classList.add('sem-logo');">
-                    <span>LOGO</span>
-                </div>
-                <div>
-                    <p class="eyebrow">Dashboard Gerencial</p>
-                    <h1>Grupo Ocupacional Servidor Fiscal Tributário</h1>
-                    <p class="subtitle">Indicadores consolidados de auditores, técnicos, comissionados e terceirizados.</p>
-                </div>
-            </div>
+            <div class="brand logo-topo">
+    <div class="logo-box">
+            <img src="assets/img/logo.png" alt="Logo" onerror="this.style.display='none'; this.parentElement.classList.add('sem-logo');">
+            <span>LOGO</span>
+        </div>
+</div>
 
             <div class="actions">
                 <span id="statusModo" class="badge publico">Modo público</span>
@@ -33,143 +29,250 @@ require __DIR__ . '/../config/auth.php';
             </div>
         </header>
 
-        <section class="notice">
-            <strong>Observação:</strong> o painel público exibe apenas dados agregados. Nomes, matrículas e CID aparecem somente com login administrativo.
+        <main>
+            <section class="secao-dashboard">
+                <div class="secao-header">
+            <h2>Força de Trabalho SEFAZ - PB</h2>
+        </div>
+
+        <section class="grid cards-principais">
+            <article class="card metric">
+                <p>Auditores</p>
+                <h2 id="qtdAuditores">0</h2>
+                <small>Total ativo</small>
+            </article>
+
+            <article class="card metric">
+                <p>Técnicos Administrativos</p>
+                <h2 id="qtdTecnicos">0</h2>
+                <small>Total ativo</small>
+            </article>
+
+            <article class="card metric">
+                <p>Comissionados</p>
+                <h2 id="qtdComissionados">0</h2>
+                <small>Total ativo</small>
+            </article>
+
+            <article class="card metric">
+                <p>Terceirizados</p>
+                <h2 id="qtdTerceirizados">0</h2>
+                <small>Total ativo</small>
+            </article>
+
+            <article class="card metric">
+                <p>Idade média geral</p>
+                <h2 id="idadeMedia">-</h2>
+                <small>Servidores ativos</small>
+            </article>
         </section>
 
-        <main>
-            <section class="grid cards-principais">
-                <article class="card metric">
-                    <p>Auditores</p>
-                    <h2 id="qtdAuditores">0</h2>
-                    <small>Total no grupo ocupacional</small>
-                </article>
-                <article class="card metric">
-                    <p>Técnicos</p>
-                    <h2 id="qtdTecnicos">0</h2>
-                    <small>Total no grupo ocupacional</small>
-                </article>
-                <article class="card metric">
-                    <p>Comissionados</p>
-                    <h2 id="qtdComissionados">0</h2>
-                    <small>Total no grupo ocupacional</small>
-                </article>
-                <article class="card metric">
-                    <p>Terceirizados</p>
-                    <h2 id="qtdTerceirizados">0</h2>
-                    <small>Total no grupo ocupacional</small>
-                </article>
-                <article class="card metric">
-                    <p>Idade média</p>
-                    <h2 id="idadeMedia">-</h2>
-                    <small>Considerando registros com data de nascimento</small>
-                </article>
-            </section>
+        <section class="grid bloco-forca">
+            <article class="card chart-card destaque-grafico">
+                <h3>Distribuição por grupo ocupacional</h3>
+                <canvas id="chartGrupos"></canvas>
+            </article>
 
-            <section class="grid cards-secundarios">
-                <article class="card">
-                    <div class="card-header">
-                        <h3>Auditores por cargo</h3>
-                    </div>
-                    <div class="mini-grid">
-                        <div>
-                            <span>AFTE</span>
-                            <strong id="qtdAFTE">0</strong>
-                            <small>Auditor Fiscal Tributário Estabelecimento</small>
-                        </div>
-                        <div>
-                            <span>AFTME</span>
-                            <strong id="qtdAFTME">0</strong>
-                            <small>Auditor Fiscal Tributário Mercadoria em Trânsito</small>
-                        </div>
-                    </div>
-                </article>
-
-                <article class="card">
-                    <div class="card-header">
-                        <h3>Auditores por sexo</h3>
-                    </div>
-                    <div class="mini-grid">
-                        <div><span>Homens</span><strong id="qtdAuditoresHomens">0</strong></div>
-                        <div><span>Mulheres</span><strong id="qtdAuditoresMulheres">0</strong></div>
-                    </div>
-                </article>
-
-                <article class="card">
-                    <div class="card-header">
-                        <h3>Aposentadorias esperadas</h3>
-                    </div>
-                    <div class="mini-grid">
-                        <div><span>Auditores 60+</span><strong id="aposAuditores">0</strong></div>
-                        <div><span>Técnicos 60+</span><strong id="aposTecnicos">0</strong></div>
-                    </div>
-                </article>
-
-                <article class="card">
-                    <div class="card-header">
-                        <h3>Auditores em gestão</h3>
-                    </div>
-                    <div class="mini-grid three">
-                        <div><span>Total</span><strong id="gestaoTotal">0</strong></div>
-                        <div><span>Homens</span><strong id="gestaoHomens">0</strong></div>
-                        <div><span>Mulheres</span><strong id="gestaoMulheres">0</strong></div>
-                    </div>
-                </article>
-            </section>
-
-            <section class="grid charts-grid">
-                <article class="card chart-card">
-                    <h3>Grupo ocupacional</h3>
-                    <canvas id="chartGrupos"></canvas>
-                </article>
-                <article class="card chart-card">
-                    <h3>AFTE x AFTME</h3>
-                    <canvas id="chartCargos"></canvas>
-                </article>
-                <article class="card chart-card wide">
-                    <h3>Distribuição dos auditores por classe e nível</h3>
-                    <canvas id="chartClasseNivel"></canvas>
-                </article>
-            </section>
-
-            <section class="grid cards-secundarios">
-                <article class="card">
-                    <h3>Licença médica</h3>
-                    <div class="mini-grid three">
-                        <div><span>Servidores com licença</span><strong id="licencaServidores">0</strong></div>
-                        <div><span>Registros com CID-F</span><strong id="licencaCidF">0</strong></div>
-                    </div>
-                    <p class="helper">CID-F é exibido publicamente apenas como total consolidado.</p>
-                </article>
-            </section>
-
-            <section id="secaoAdminLicencas" class="card table-card hidden">
-                <div class="card-header between">
+            <article class="card">
+                <div class="card-header">
+                    <h3>Comissionados</h3>
+                </div>
+                <div class="mini-grid">
                     <div>
-                        <h3>Detalhamento administrativo de licenças</h3>
-                        <p class="helper">Área restrita. Contém nome, matrícula e CID.</p>
+                        <span>Homens</span>
+                        <strong id="qtdComissionadosHomens">0</strong>
+                    </div>
+                    <div>
+                        <span>Mulheres</span>
+                        <strong id="qtdComissionadosMulheres">0</strong>
                     </div>
                 </div>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Matrícula</th>
-                                <th>Nome</th>
-                                <th>Grupo</th>
-                                <th>Cargo</th>
-                                <th>Sexo</th>
-                                <th>Idade</th>
-                                <th>Dias restantes de Licença</th>
-                                <th>CID</th>
-                                <th>CID-F</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabelaLicencas"></tbody>
-                    </table>
+            </article>
+
+            <article class="card">
+                <div class="card-header">
+                    <h3>Sexo ♂️/♀️</h3>
                 </div>
-            </section>
-        </main>
+                <div class="mini-grid">
+                    <div>
+                        <span>Homens</span>
+                        <strong id="sexoGeralHomens">0</strong>
+                    </div>
+                    <div>
+                        <span>Mulheres</span>
+                        <strong id="sexoGeralMulheres">0</strong>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="grid charts-grid">
+            <article class="card chart-card wide treemap-card">
+        <h3>Qualificação da Força de Trabalho SEFAZ - PB</h3>
+        <canvas id="chartQualificacaoForca"></canvas>
+    </article>
+        </section>
+
+    </section>
+
+    <section class="secao-dashboard">
+        <div class="secao-header">
+            <h2>Grupo Ocupacional Servidor Fiscal Tributário</h2>
+        </div>
+
+        <section class="grid cards-secundarios">
+            <article class="card">
+                <div class="card-header">
+                    <h3>Auditores / AFTE / AFTME</h3>
+                </div>
+                <div class="mini-grid three">
+                    <div>
+                        <span>Total Auditores</span>
+                        <strong id="qtdAuditoresBloco">0</strong>
+                    </div>
+                    <div>
+                        <span>AFTE</span>
+                        <strong id="qtdAFTE">0</strong>
+                        <small>Estabelecimento</small>
+                    </div>
+                    <div>
+                        <span>AFTME</span>
+                        <strong id="qtdAFTME">0</strong>
+                        <small>Mercadoria em Trânsito</small>
+                    </div>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card-header">
+                    <h3>Auditores por sexo</h3>
+                </div>
+                <div class="mini-grid">
+                    <div>
+                        <span>Homens</span>
+                        <strong id="qtdAuditoresHomens">0</strong>
+                    </div>
+                    <div>
+                        <span>Mulheres</span>
+                        <strong id="qtdAuditoresMulheres">0</strong>
+                    </div>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card-header">
+                    <h3>Média de idade dos auditores</h3>
+                </div>
+                <div class="mini-grid">
+                    <div>
+                        <span>Idade média</span>
+                        <strong id="idadeMediaAuditores">-</strong>
+                    </div>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card-header">
+                    <h3>Auditores em cargo de gestão</h3>
+                </div>
+                <div class="mini-grid three">
+                    <div>
+                        <span>Total</span>
+                        <strong id="gestaoTotal">0</strong>
+                    </div>
+                    <div>
+                        <span>Homens</span>
+                        <strong id="gestaoHomens">0</strong>
+                    </div>
+                    <div>
+                        <span>Mulheres</span>
+                        <strong id="gestaoMulheres">0</strong>
+                    </div>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card-header">
+                    <h3>Auditores 60+</h3>
+                </div>
+                <div class="mini-grid">
+                    <div>
+                        <span>Quantidade</span>
+                        <strong id="auditores60Qtd">0</strong>
+                        <small>Aposentadoria esperada</small>
+                    </div>
+                    <div>
+                        <span>Percentual etário</span>
+                        <strong id="auditores60Percentual">0%</strong>
+                        <small>Sobre o total de auditores</small>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="grid charts-grid">
+    <article class="card chart-card">
+        <h3>AFTE x AFTME</h3>
+        <canvas id="chartCargos"></canvas>
+    </article>
+
+    <article class="card chart-card wide">
+        <h3>Distribuição dos auditores por classe e nível</h3>
+        <canvas id="chartClasseNivel"></canvas>
+    </article>
+
+    <article class="card chart-card wide">
+        <h3>Qualificação dos Fiscais Tributários</h3>
+        <canvas id="chartQualificacaoFiscais"></canvas>
+    </article>
+    </section>
+
+    </section>
+
+    <section class="grid cards-secundarios">
+        <article class="card">
+            <h3>Licença médica vigente</h3>
+            <div class="mini-grid">
+                <div>
+                    <span>Servidores com licença vigente</span>
+                    <strong id="licencaServidores">0</strong>
+                </div>
+                <div>
+                    <span>Registros com CID-F</span>
+                    <strong id="licencaCidF">0</strong>
+                </div>
+            </div>
+            <p class="helper">CID-F é exibido publicamente apenas como total consolidado.</p>
+        </article>
+    </section>
+
+    <section id="secaoAdminLicencas" class="card table-card hidden">
+        <div class="card-header between">
+            <div>
+                <h3>Detalhamento administrativo de licenças</h3>
+                <p class="helper">Área restrita. Contém nome, matrícula, CID e dias restantes.</p>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Matrícula</th>
+                        <th>Nome</th>
+                        <th>Grupo</th>
+                        <th>Cargo</th>
+                        <th>Sexo</th>
+                        <th>Idade</th>
+                        <th>Dias restantes</th>
+                        <th>CID</th>
+                        <th>CID-F?</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaLicencas"></tbody>
+            </table>
+        </div>
+    </section>
+</main>
     </div>
 
     <div id="modalLogin" class="modal hidden">

@@ -8,7 +8,7 @@ const estado = {
 
 const labelsPadrao = {
     AUDITOR: 'Auditores',
-    TECNICO: 'Técnicos',
+    TECNICO: 'Técnicos Administrativos',
     COMISSIONADO: 'Comissionados',
     TERCEIRIZADO: 'Terceirizados',
     AFTE: 'AFTE',
@@ -76,6 +76,287 @@ function criarOuAtualizarChart(idCanvas, tipo, labels, valores, opcoesExtras = {
     });
 }
 
+function criarDoughnutModerno(idCanvas, labels, valores) {
+    const ctx = document.getElementById(idCanvas);
+    if (!ctx) return;
+
+    if (charts[idCanvas]) {
+        charts[idCanvas].destroy();
+    }
+
+    const total = valores.reduce((soma, valor) => soma + Number(valor || 0), 0);
+
+    const pluginTextoCentro = {
+        id: 'textoCentro',
+        afterDraw(chart) {
+            const { ctx, chartArea } = chart;
+            if (!chartArea) return;
+
+            const centroX = (chartArea.left + chartArea.right) / 2;
+            const centroY = (chartArea.top + chartArea.bottom) / 2;
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            ctx.font = '700 30px Arial';
+            ctx.fillStyle = '#8f1d2c';
+            ctx.fillText(formatarNumero(total), centroX, centroY - 8);
+
+            ctx.font = '600 13px Arial';
+            ctx.fillStyle = '#71717a';
+            ctx.fillText('servidores ativos', centroX, centroY + 22);
+
+            ctx.restore();
+        }
+    };
+
+    charts[idCanvas] = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels,
+            datasets: [{
+                data: valores,
+                backgroundColor: [
+                    '#8f1d2c',
+                    '#b73a4a',
+                    '#2f3a45',
+                    '#6b7280',
+                    '#d9a441',
+                    '#1f7a64'
+                ],
+                borderColor: '#ffffff',
+                borderWidth: 4,
+                hoverOffset: 14,
+                spacing: 3,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 18,
+                        font: {
+                            size: 13,
+                            weight: '600'
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: '#171717',
+                    padding: 12,
+                    cornerRadius: 10,
+                    callbacks: {
+                        label: (context) => {
+                            const valor = Number(context.raw || 0);
+                            const percentual = total > 0 ? ((valor / total) * 100).toFixed(1) : 0;
+                            return `${context.label}: ${formatarNumero(valor)} (${String(percentual).replace('.', ',')}%)`;
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [pluginTextoCentro]
+    });
+}
+function nomeCurtoFormacao(nome) {
+    const texto = String(nome || '').toUpperCase();
+
+    if (texto.includes('NÃO INFORMADO') || texto.includes('NAO INFORMADO')) return 'Não informado';
+    if (texto.includes('GRADUACAO')) return 'Graduação';
+    if (texto.includes('ESPECIALIZACAO')) return 'Especialização';
+    if (texto.includes('NIVEL MEDIO')) return 'Nível médio';
+    if (texto.includes('CURSO TECNICO')) return 'Curso técnico';
+    if (texto.includes('TECNICO DE NIVEL MEDIO')) return 'Téc. nível médio';
+    if (texto.includes('MESTRADO')) return 'Mestrado';
+    if (texto.includes('DOUTORADO')) return 'Doutorado';
+    if (texto.includes('SUPERIOR INCOMPLETO')) return 'Superior inc.';
+    if (texto.includes('FUNDAMENTAL COMPLETO')) return 'Fundamental';
+    if (texto.includes('FUNDAMENTAL INCOMPLETO')) return 'Fund. inc.';
+    if (texto.includes('POS GRADUACAO')) return 'Pós-graduação';
+    if (texto.includes('OUTROS')) return 'Outros';
+
+    return nome;
+}
+
+function nomeCurtoFormacao(nome) {
+    const texto = String(nome || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase();
+
+    if (texto.includes('NAO INFORMADO')) return 'Não informado';
+    if (texto.includes('TECNICO DE NIVEL MEDIO')) return 'Téc. nível médio';
+    if (texto.includes('NIVEL MEDIO')) return 'Nível médio';
+    if (texto.includes('CURSO TECNICO')) return 'Curso técnico';
+    if (texto.includes('GRADUACAO') && !texto.includes('POS')) return 'Graduação';
+    if (texto.includes('ESPECIALIZACAO')) return 'Especialização';
+    if (texto.includes('MESTRADO')) return 'Mestrado';
+    if (texto.includes('DOUTORADO')) return 'Doutorado';
+    if (texto.includes('SUPERIOR INCOMPLETO')) return 'Superior inc.';
+    if (texto.includes('FUNDAMENTAL INCOMPLETO')) return 'Fund. inc.';
+    if (texto.includes('FUNDAMENTAL COMPLETO')) return 'Fundamental';
+    if (texto.includes('POS GRADUACAO')) return 'Pós-grad.';
+    if (texto.includes('OUTROS')) return 'Outros';
+
+    return nome;
+}
+
+function criarTreemapQualificacao(idCanvas, lista, tituloTooltip = 'Quantidade') {
+    const ctx = document.getElementById(idCanvas);
+    if (!ctx) return;
+
+    if (!lista || lista.length === 0) return;
+
+    if (charts[idCanvas]) {
+        charts[idCanvas].destroy();
+    }
+
+    const dadosReais = lista
+        .map((item) => ({
+            formacao: item.formacao || 'Não informado',
+            quantidade: Number(item.quantidade || 0)
+        }))
+        .filter((item) => item.quantidade > 0)
+        .sort((a, b) => b.quantidade - a.quantidade);
+
+    const totalOriginal = dadosReais.reduce((soma, item) => soma + item.quantidade, 0);
+
+    /*
+        Aqui está o ajuste principal:
+        O treemap usa valor_visual para desenhar os blocos.
+        A quantidade real continua aparecendo nos rótulos e no tooltip.
+    */
+    const maiorQuantidade = Math.max(...dadosReais.map((item) => item.quantidade));
+    const minimoVisual = Math.sqrt(maiorQuantidade) * 0.18;
+
+    const dados = dadosReais.map((item) => ({
+        ...item,
+        valor_visual: Math.max(Math.sqrt(item.quantidade), minimoVisual)
+    }));
+
+    const cores = [
+        '#7f1d2d',
+        '#982436',
+        '#b83242',
+        '#cf4658',
+        '#dc6170',
+        '#e48893',
+        '#334155',
+        '#475569',
+        '#64748b',
+        '#7f1d2d',
+        '#982436',
+        '#b83242'
+    ];
+
+    charts[idCanvas] = new Chart(ctx, {
+        type: 'treemap',
+        data: {
+            datasets: [{
+                label: tituloTooltip,
+                tree: dados,
+                key: 'valor_visual',
+                groups: ['formacao'],
+                spacing: 6,
+                borderWidth: 4,
+                borderColor: '#ffffff',
+                borderRadius: 14,
+
+                backgroundColor(context) {
+                    if (context.type !== 'data') return 'transparent';
+                    return cores[context.dataIndex % cores.length];
+                },
+
+                hoverBackgroundColor(context) {
+                    if (context.type !== 'data') return 'transparent';
+                    return '#641421';
+                },
+
+                labels: {
+                    display: true,
+                    color: '#ffffff',
+                    align: 'center',
+                    position: 'middle',
+                    font: {
+                        size: 12,
+                        weight: 'bold'
+                    },
+                    formatter(context) {
+                        const nomeOriginal = context.raw?.g || '';
+                        const itemReal = dadosReais.find((item) => item.formacao === nomeOriginal);
+
+                        if (!itemReal) return '';
+
+                        const nomeCurto = nomeCurtoFormacao(nomeOriginal);
+                        const valor = itemReal.quantidade;
+                        const percentualNumero = totalOriginal > 0 ? (valor / totalOriginal) * 100 : 0;
+                        const percentual = percentualNumero.toFixed(1).replace('.', ',');
+
+                        if (percentualNumero >= 8) {
+                            return [
+                                nomeCurto,
+                                formatarNumero(valor),
+                                `${percentual}%`
+                            ];
+                        }
+
+                        if (percentualNumero >= 1) {
+                            return [
+                                nomeCurto,
+                                formatarNumero(valor)
+                            ];
+                        }
+
+                        return [
+                            nomeCurto
+                        ];
+                    }
+                }
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: {
+                padding: 0
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: '#171717',
+                    padding: 12,
+                    cornerRadius: 10,
+                    callbacks: {
+                        title(items) {
+                            return items[0]?.raw?.g || '';
+                        },
+                        label(item) {
+                            const nomeOriginal = item.raw?.g || '';
+                            const itemReal = dadosReais.find((linha) => linha.formacao === nomeOriginal);
+
+                            if (!itemReal) return '';
+
+                            const valor = itemReal.quantidade;
+                            const percentual = totalOriginal > 0 ? ((valor / totalOriginal) * 100).toFixed(1) : '0.0';
+
+                            return `${tituloTooltip}: ${formatarNumero(valor)} (${percentual.replace('.', ',')}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 function atualizarModo(modo, usuario) {
     estado.modo = modo;
     estado.usuario = usuario;
@@ -123,9 +404,14 @@ function renderizarDashboard(payload) {
     const totalPorGrupo = dados.total_por_grupo || [];
     const auditoresPorCargo = dados.auditores_por_cargo || [];
     const sexoAuditores = dados.sexo_auditores || [];
+    const sexoGeral = dados.sexo_geral || [];
+    const sexoComissionados = dados.sexo_comissionados || [];
+    const auditores60 = dados.auditores_60 || {};
     const aposentadorias = dados.aposentadorias_esperadas || [];
     const gestao = dados.auditores_gestao || [];
     const classeNivel = dados.distribuicao_classe_nivel || [];
+    const qualificacaoForca = dados.qualificacao_forca_trabalho || [];
+    const qualificacaoFiscais = dados.qualificacao_fiscais || [];
     const licencas = dados.licencas || {};
 
     $('#qtdAuditores').textContent = formatarNumero(valorPorChave(totalPorGrupo, 'grupo_ocupacional', 'AUDITOR'));
@@ -134,14 +420,29 @@ function renderizarDashboard(payload) {
     $('#qtdTerceirizados').textContent = formatarNumero(valorPorChave(totalPorGrupo, 'grupo_ocupacional', 'TERCEIRIZADO'));
     $('#idadeMedia').textContent = dados.idade_media_geral ? `${String(dados.idade_media_geral).replace('.', ',')} anos` : '-';
 
+    $('#qtdAuditoresBloco').textContent = formatarNumero(valorPorChave(totalPorGrupo, 'grupo_ocupacional', 'AUDITOR'));
+
+    $('#sexoGeralHomens').textContent = formatarNumero(valorPorChave(sexoGeral, 'sexo', 'M'));
+    $('#sexoGeralMulheres').textContent = formatarNumero(valorPorChave(sexoGeral, 'sexo', 'F'));
+
+    $('#qtdComissionadosHomens').textContent = formatarNumero(valorPorChave(sexoComissionados, 'sexo', 'M'));
+    $('#qtdComissionadosMulheres').textContent = formatarNumero(valorPorChave(sexoComissionados, 'sexo', 'F'));
+
+    $('#idadeMediaAuditores').textContent = dados.idade_media_auditores
+        ? `${String(dados.idade_media_auditores).replace('.', ',')} anos`
+        : '-';
+
+    $('#auditores60Qtd').textContent = formatarNumero(auditores60.auditores_60);
+    $('#auditores60Percentual').textContent = `${String(auditores60.percentual_60 || 0).replace('.', ',')}%`;
+
     $('#qtdAFTE').textContent = formatarNumero(valorPorChave(auditoresPorCargo, 'cargo_fiscal', 'AFTE'));
     $('#qtdAFTME').textContent = formatarNumero(valorPorChave(auditoresPorCargo, 'cargo_fiscal', 'AFTME'));
 
     $('#qtdAuditoresHomens').textContent = formatarNumero(valorPorChave(sexoAuditores, 'sexo', 'M'));
     $('#qtdAuditoresMulheres').textContent = formatarNumero(valorPorChave(sexoAuditores, 'sexo', 'F'));
 
-    $('#aposAuditores').textContent = formatarNumero(valorPorChave(aposentadorias, 'grupo_ocupacional', 'AUDITOR'));
-    $('#aposTecnicos').textContent = formatarNumero(valorPorChave(aposentadorias, 'grupo_ocupacional', 'TECNICO'));
+    //$('#aposAuditores').textContent = formatarNumero(valorPorChave(aposentadorias, 'grupo_ocupacional', 'AUDITOR'));
+    //$('#aposTecnicos').textContent = formatarNumero(valorPorChave(aposentadorias, 'grupo_ocupacional', 'TECNICO'));
 
     const gestaoHomens = valorPorChave(gestao, 'sexo', 'M');
     const gestaoMulheres = valorPorChave(gestao, 'sexo', 'F');
@@ -152,13 +453,11 @@ function renderizarDashboard(payload) {
     $('#licencaServidores').textContent = formatarNumero(licencas.servidores_com_licenca);
     $('#licencaCidF').textContent = formatarNumero(licencas.servidores_com_cid_f);
 
-    criarOuAtualizarChart(
-        'chartGrupos',
-        'doughnut',
-        totalPorGrupo.map((x) => labelsPadrao[x.grupo_ocupacional] || x.grupo_ocupacional),
-        totalPorGrupo.map((x) => Number(x.quantidade || 0)),
-        { label: 'Servidores' }
-    );
+    criarDoughnutModerno(
+    'chartGrupos',
+    totalPorGrupo.map((x) => labelsPadrao[x.grupo_ocupacional] || x.grupo_ocupacional),
+    totalPorGrupo.map((x) => Number(x.quantidade || 0))
+);
 
     criarOuAtualizarChart(
         'chartCargos',
@@ -180,7 +479,8 @@ function renderizarDashboard(payload) {
             },
         }
     );
-
+    criarTreemapQualificacao('chartQualificacaoForca', qualificacaoForca, 'Servidores');
+    criarTreemapQualificacao('chartQualificacaoFiscais', qualificacaoFiscais, 'Fiscais');
     preencherTabelaLicencas(dados.detalhes_licencas_admin || []);
 }
 

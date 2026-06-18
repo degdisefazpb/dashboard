@@ -15,7 +15,7 @@ function rows(PDO $pdo, string $sql, array $params = []): array
 {
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
-    return $stmt->fetchAll();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 $totalPorGrupo = rows($pdo, "
@@ -31,6 +31,47 @@ $auditoresPorCargo = rows($pdo, "
     WHERE ativo = 1 AND grupo_ocupacional = 'AUDITOR'
     GROUP BY cargo_fiscal
 ");
+$sexoGeral = rows($pdo, "
+    SELECT sexo, COUNT(*) AS quantidade
+    FROM vw_servidores_dashboard
+    WHERE ativo = 1
+    GROUP BY sexo
+");
+
+$sexoComissionados = rows($pdo, "
+    SELECT sexo, COUNT(*) AS quantidade
+    FROM vw_servidores_dashboard
+    WHERE ativo = 1
+      AND grupo_ocupacional = 'COMISSIONADO'
+    GROUP BY sexo
+");
+
+$idadeMediaAuditores = scalar_query($pdo, "
+    SELECT ROUND(AVG(idade), 1)
+    FROM vw_servidores_dashboard
+    WHERE ativo = 1
+      AND grupo_ocupacional = 'AUDITOR'
+      AND idade IS NOT NULL
+      AND idade > 0
+");
+
+$auditores60 = rows($pdo, "
+    SELECT
+        COUNT(*) AS total_auditores,
+        SUM(CASE WHEN idade >= 60 THEN 1 ELSE 0 END) AS auditores_60,
+        CASE 
+            WHEN COUNT(*) > 0 
+            THEN ROUND(SUM(CASE WHEN idade >= 60 THEN 1 ELSE 0 END) * 100 / COUNT(*), 1)
+            ELSE 0
+        END AS percentual_60
+    FROM vw_servidores_dashboard
+    WHERE ativo = 1
+      AND grupo_ocupacional = 'AUDITOR'
+")[0] ?? [
+    'total_auditores' => 0,
+    'auditores_60' => 0,
+    'percentual_60' => 0,
+];
 
 $sexoAuditores = rows($pdo, "
     SELECT sexo, COUNT(*) AS quantidade
@@ -56,6 +97,27 @@ $idadeMediaPorGrupo = rows($pdo, "
       AND idade IS NOT NULL
       AND idade > 0
     GROUP BY grupo_ocupacional
+");
+
+$qualificacaoForcaTrabalho = rows($pdo, "
+    SELECT 
+        COALESCE(NULLIF(TRIM(formacao), ''), 'Não informado') AS formacao,
+        COUNT(*) AS quantidade
+    FROM vw_servidores_dashboard
+    WHERE ativo = 1
+    GROUP BY COALESCE(NULLIF(TRIM(formacao), ''), 'Não informado')
+    ORDER BY quantidade DESC
+");
+
+$qualificacaoFiscais = rows($pdo, "
+    SELECT 
+        COALESCE(NULLIF(TRIM(formacao), ''), 'Não informado') AS formacao,
+        COUNT(*) AS quantidade
+    FROM vw_servidores_dashboard
+    WHERE ativo = 1
+      AND grupo_ocupacional = 'AUDITOR'
+    GROUP BY COALESCE(NULLIF(TRIM(formacao), ''), 'Não informado')
+    ORDER BY quantidade DESC
 ");
 
 $aposentadoriasEsperadas = rows($pdo, "
@@ -206,8 +268,14 @@ json_response([
         'total_por_grupo' => $totalPorGrupo,
         'auditores_por_cargo' => $auditoresPorCargo,
         'sexo_auditores' => $sexoAuditores,
+        'sexo_geral' => $sexoGeral,
+        'sexo_comissionados' => $sexoComissionados,
+        'idade_media_auditores' => $idadeMediaAuditores ? (float)$idadeMediaAuditores : null,
+        'auditores_60' => $auditores60,
         'idade_media_geral' => $idadeMediaGeral ? (float)$idadeMediaGeral : null,
         'idade_media_por_grupo' => $idadeMediaPorGrupo,
+        'qualificacao_forca_trabalho' => $qualificacaoForcaTrabalho,
+        'qualificacao_fiscais' => $qualificacaoFiscais,
         'aposentadorias_esperadas' => $aposentadoriasEsperadas,
         'auditores_gestao' => $auditoresGestao,
         'distribuicao_classe_nivel' => $distribuicaoClasseNivel,
