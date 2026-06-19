@@ -9,7 +9,7 @@ require __DIR__ . '/../config/auth.php';
     <title>Dashboard Gerencial - Grupo Ocupacional Servidor Fiscal Tributário</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js"></script>
+   
 </head>
 <body>
     <div class="app-shell">
@@ -47,6 +47,12 @@ require __DIR__ . '/../config/auth.php';
                 <h2 id="qtdTecnicos">0</h2>
                 <small>Total ativo</small>
             </article>
+            
+            <article class="card metric">
+                <p>Efetivos</p>
+                <h2 id="qtdEfetivosNaoFiscais">0</h2>
+                <small>Exceto auditores e técnicos</small>
+            </article>
 
             <article class="card metric">
                 <p>Comissionados</p>
@@ -59,7 +65,11 @@ require __DIR__ . '/../config/auth.php';
                 <h2 id="qtdTerceirizados">0</h2>
                 <small>Total ativo</small>
             </article>
-
+            <article class="card metric">
+                <p>Estagiários</p>
+                <h2 id="qtdEstagiarios">0</h2>
+                <small>Total ativo</small>
+            </article>
             <article class="card metric">
                 <p>Idade média geral</p>
                 <h2 id="idadeMedia">-</h2>
@@ -107,10 +117,10 @@ require __DIR__ . '/../config/auth.php';
         </section>
 
         <section class="grid charts-grid">
-            <article class="card chart-card wide treemap-card">
-        <h3>Qualificação da Força de Trabalho SEFAZ - PB</h3>
-        <canvas id="chartQualificacaoForca"></canvas>
-    </article>
+            <article class="card chart-card wide doughnut-qualificacao-card">
+            <h3>Qualificação da Força de Trabalho SEFAZ - PB</h3>
+            <canvas id="chartQualificacaoForca"></canvas>
+            </article>
         </section>
 
     </section>
@@ -123,7 +133,7 @@ require __DIR__ . '/../config/auth.php';
         <section class="grid cards-secundarios">
             <article class="card">
                 <div class="card-header">
-                    <h3>Auditores / AFTE / AFTME</h3>
+                  <h3>AFTE x AFTMT</h3>
                 </div>
                 <div class="mini-grid three">
                     <div>
@@ -136,8 +146,8 @@ require __DIR__ . '/../config/auth.php';
                         <small>Estabelecimento</small>
                     </div>
                     <div>
-                        <span>AFTME</span>
-                        <strong id="qtdAFTME">0</strong>
+                        <span>AFTMT</span>
+                        <strong id="qtdAFTMT">0</strong>
                         <small>Mercadoria em Trânsito</small>
                     </div>
                 </div>
@@ -211,19 +221,16 @@ require __DIR__ . '/../config/auth.php';
         </section>
 
         <section class="grid charts-grid">
-    <article class="card chart-card">
-        <h3>AFTE x AFTME</h3>
-        <canvas id="chartCargos"></canvas>
-    </article>
+   
 
     <article class="card chart-card wide">
         <h3>Distribuição dos auditores por classe e nível</h3>
         <canvas id="chartClasseNivel"></canvas>
     </article>
 
-    <article class="card chart-card wide">
-        <h3>Qualificação dos Fiscais Tributários</h3>
-        <canvas id="chartQualificacaoFiscais"></canvas>
+    <article class="card chart-card wide doughnut-qualificacao-card">
+            <h3>Qualificação dos Fiscais Tributários</h3>
+            <canvas id="chartQualificacaoFiscais"></canvas>
     </article>
     </section>
 
@@ -272,6 +279,80 @@ require __DIR__ . '/../config/auth.php';
             </table>
         </div>
     </section>
+
+<section id="secaoAdminServidores" class="card table-card hidden">
+    <div class="card-header between">
+        <div>
+            <h3>Todos os servidores</h3>
+            <p class="helper">Área restrita. Lista completa com filtros administrativos.</p>
+        </div>
+        <strong id="qtdResultadoServidores" class="contador-admin">0 registros</strong>
+    </div>
+
+    <div class="filtros-admin">
+        <label>
+            Buscar
+            <input type="text" id="filtroServidor" placeholder="Nome, matrícula, cargo ou função">
+        </label>
+
+        <label>
+            Grupo
+            <select id="filtroGrupoServidor">
+                <option value="">Todos</option>
+            </select>
+        </label>
+
+        <label>
+            Sexo
+            <select id="filtroSexoServidor">
+                <option value="">Todos</option>
+            </select>
+        </label>
+
+        <label>
+            Situação
+            <select id="filtroSituacaoServidor">
+                <option value="">Todas</option>
+            </select>
+        </label>
+
+        <label>
+            Vínculo
+            <select id="filtroVinculoServidor">
+                <option value="">Todos</option>
+            </select>
+        </label>
+
+        <button type="button" id="btnLimparFiltrosServidores" class="btn ghost">
+            Limpar filtros
+        </button>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Matrícula</th>
+                    <th>Nome</th>
+                    <th>Grupo</th>
+                    <th>Cargo fiscal</th>
+                    <th>Sexo</th>
+                    <th>Idade</th>
+                    <th>Vínculo</th>
+                    <th>Cargo</th>
+                    <th>Função</th>
+                    <th>Formação</th>
+                    <th>Efetivo?</th>
+                    <th>Gestão?</th>
+                    <th>Situação</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaServidoresAdmin"></tbody>
+        </table>
+    </div>
+</section>
+
+
 </main>
     </div>
 

@@ -25,6 +25,14 @@ $totalPorGrupo = rows($pdo, "
     GROUP BY grupo_ocupacional
 ");
 
+$totalEfetivosNaoFiscais = scalar_query($pdo, "
+    SELECT COUNT(*)
+    FROM vw_servidores_dashboard
+    WHERE ativo = 1
+      AND efetivo = 1
+      AND grupo_ocupacional NOT IN ('AUDITOR', 'TECNICO')
+");
+
 $auditoresPorCargo = rows($pdo, "
     SELECT COALESCE(cargo_fiscal, 'NAO_INFORMADO') AS cargo_fiscal, COUNT(*) AS quantidade
     FROM vw_servidores_dashboard
@@ -195,6 +203,8 @@ $licencas = rows($pdo, "
 ];
 
 $detalhesLicencas = [];
+$servidoresAdmin = [];
+
 
 if ($isAdmin) {
     $detalhesLicencas = rows($pdo, "
@@ -258,6 +268,31 @@ if ($isAdmin) {
         ORDER BY dias_restantes_licenca DESC, nome ASC
         LIMIT 500
     ");
+
+    $servidoresAdmin = rows($pdo, "
+    SELECT
+        matricula,
+        nome,
+        grupo_ocupacional,
+        cargo_fiscal,
+        sexo,
+        idade,
+        cargo,
+        funcao,
+        vinculo_funcao,
+        classe,
+        formacao,
+        efetivo,
+        em_gestao,
+        licenca,
+        tipo_licenca,
+        cid,
+        situacao_servidor,
+        tipo_situacao,
+        ativo
+    FROM vw_servidores_dashboard
+    ORDER BY ativo DESC, grupo_ocupacional ASC, nome ASC
+");
 }
 
 json_response([
@@ -266,6 +301,7 @@ json_response([
     'usuario' => current_user(),
     'dados' => [
         'total_por_grupo' => $totalPorGrupo,
+        'total_efetivos_nao_fiscais' => $totalEfetivosNaoFiscais ? (int)$totalEfetivosNaoFiscais : 0,
         'auditores_por_cargo' => $auditoresPorCargo,
         'sexo_auditores' => $sexoAuditores,
         'sexo_geral' => $sexoGeral,
@@ -281,5 +317,6 @@ json_response([
         'distribuicao_classe_nivel' => $distribuicaoClasseNivel,
         'licencas' => $licencas,
         'detalhes_licencas_admin' => $detalhesLicencas,
+        'servidores_admin' => $servidoresAdmin,
     ],
 ]);

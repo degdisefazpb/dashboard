@@ -6,13 +6,17 @@ const estado = {
     usuario: null,
 };
 
+let servidoresAdminCache = [];
+
 const labelsPadrao = {
     AUDITOR: 'Auditores',
     TECNICO: 'Técnicos Administrativos',
+    EFETIVO: 'Efetivos',
     COMISSIONADO: 'Comissionados',
     TERCEIRIZADO: 'Terceirizados',
+    ESTAGIARIO: 'Estagiários',
     AFTE: 'AFTE',
-    AFTME: 'AFTME',
+    AFTMT: 'AFTMT',
     NAO_INFORMADO: 'Não informado',
     M: 'Homens',
     F: 'Mulheres',
@@ -77,76 +81,133 @@ function criarOuAtualizarChart(idCanvas, tipo, labels, valores, opcoesExtras = {
 }
 
 function criarDoughnutModerno(idCanvas, labels, valores) {
-    const ctx = document.getElementById(idCanvas);
-    if (!ctx) return;
+    const canvas = document.getElementById(idCanvas);
+    if (!canvas) return;
 
     if (charts[idCanvas]) {
         charts[idCanvas].destroy();
     }
 
-    const total = valores.reduce((soma, valor) => soma + Number(valor || 0), 0);
+   const coresPorLabel = {
+    'Auditores': '#8f1d2c',
+    'Comissionados': '#c44555',
+    'Efetivos': '#2f3a45',
+    'Estagiários': '#71717a',
+    'Não informado': '#9ca3af',
+    'Técnicos Administrativos': '#1f7a64',
+    'Terceirizados': '#d9a441'
+};
 
-    const pluginTextoCentro = {
-        id: 'textoCentro',
-        afterDraw(chart) {
-            const { ctx, chartArea } = chart;
-            if (!chartArea) return;
+const cores = labels.map((label) => coresPorLabel[label] || '#64748b');
 
-            const centroX = (chartArea.left + chartArea.right) / 2;
-            const centroY = (chartArea.top + chartArea.bottom) / 2;
+    const pluginCentroEPorcentagem = {
+        id: `pluginCentroEPorcentagem_${idCanvas}`,
+        afterDatasetsDraw(chart) {
+            const { ctx } = chart;
+            const meta = chart.getDatasetMeta(0);
+            const dataset = chart.data.datasets[0];
+
+            const valoresVisiveis = dataset.data.map((valor, index) => {
+                return chart.getDataVisibility(index) ? Number(valor || 0) : 0;
+            });
+
+            const totalVisivel = valoresVisiveis.reduce((soma, valor) => soma + valor, 0);
 
             ctx.save();
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
 
-            ctx.font = '700 30px Arial';
-            ctx.fillStyle = '#8f1d2c';
-            ctx.fillText(formatarNumero(total), centroX, centroY - 8);
+            if (meta.data.length > 0) {
+                const centroX = meta.data[0].x;
+                const centroY = meta.data[0].y;
 
-            ctx.font = '600 13px Arial';
-            ctx.fillStyle = '#71717a';
-            ctx.fillText('servidores ativos', centroX, centroY + 22);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                ctx.fillStyle = '#8f1d2c';
+                ctx.font = '700 20px Arial';
+                ctx.fillText(formatarNumero(totalVisivel), centroX, centroY - 10);
+
+                ctx.fillStyle = '#6b7280';
+                ctx.font = '600 12px Arial';
+                ctx.fillText('servidores ativos', centroX, centroY + 16);
+            }
+
+            ctx.font = '700 13px Arial';
+            ctx.lineWidth = 1.5;
+
+            meta.data.forEach((arc, index) => {
+                if (!chart.getDataVisibility(index)) return;
+
+                const valor = Number(dataset.data[index] || 0);
+                if (!valor || totalVisivel <= 0) return;
+
+                const percentualNumero = (valor / totalVisivel) * 100;
+               if (percentualNumero < 0.3) return;
+
+                const percentual = percentualNumero.toFixed(1).replace('.', ',');
+
+                const angulo = (arc.startAngle + arc.endAngle) / 2;
+                const raio = arc.outerRadius;
+                const centroX = arc.x;
+                const centroY = arc.y;
+
+                const x1 = centroX + Math.cos(angulo) * (raio + 4);
+                const y1 = centroY + Math.sin(angulo) * (raio + 4);
+
+                const x2 = centroX + Math.cos(angulo) * (raio + 20);
+                const y2 = centroY + Math.sin(angulo) * (raio + 20);
+
+                const ladoDireito = x2 >= centroX;
+                const x3 = ladoDireito ? x2 + 18 : x2 - 18;
+                const y3 = y2;
+
+                const cor = dataset.backgroundColor[index];
+
+                ctx.strokeStyle = cor;
+                ctx.fillStyle = cor;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.lineTo(x3, y3);
+                ctx.stroke();
+
+                ctx.textAlign = ladoDireito ? 'left' : 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`${percentual}%`, ladoDireito ? x3 + 4 : x3 - 4, y3);
+            });
 
             ctx.restore();
         }
     };
 
-    charts[idCanvas] = new Chart(ctx, {
+    charts[idCanvas] = new Chart(canvas, {
         type: 'doughnut',
         data: {
             labels,
             datasets: [{
                 data: valores,
-                backgroundColor: [
-                    '#8f1d2c',
-                    '#b73a4a',
-                    '#2f3a45',
-                    '#6b7280',
-                    '#d9a441',
-                    '#1f7a64'
-                ],
+                backgroundColor: cores,
                 borderColor: '#ffffff',
-                borderWidth: 4,
-                hoverOffset: 14,
-                spacing: 3,
+                borderWidth: 7,
+                hoverOffset: 8,
+                spacing: 2
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '68%',
+            cutout: '70%',
+            layout: {
+                padding: {
+                    top: 20,
+                    right: 85,
+                    bottom: 20,
+                    left: 85
+                }
+            },
             plugins: {
                 legend: {
-                    position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        pointStyle: 'circle',
-                        padding: 18,
-                        font: {
-                            size: 13,
-                            weight: '600'
-                        }
-                    }
+                    display: false
                 },
                 tooltip: {
                     backgroundColor: '#171717',
@@ -154,17 +215,64 @@ function criarDoughnutModerno(idCanvas, labels, valores) {
                     cornerRadius: 10,
                     callbacks: {
                         label: (context) => {
+                            const chart = context.chart;
+                            const dataset = context.dataset;
+
+                            const valoresVisiveis = dataset.data.map((valor, index) => {
+                                return chart.getDataVisibility(index) ? Number(valor || 0) : 0;
+                            });
+
+                            const totalVisivel = valoresVisiveis.reduce((soma, valor) => soma + valor, 0);
                             const valor = Number(context.raw || 0);
-                            const percentual = total > 0 ? ((valor / total) * 100).toFixed(1) : 0;
-                            return `${context.label}: ${formatarNumero(valor)} (${String(percentual).replace('.', ',')}%)`;
+                            const percentual = totalVisivel > 0 ? ((valor / totalVisivel) * 100).toFixed(1) : '0.0';
+
+                            return `${context.label}: ${formatarNumero(valor)} servidores (${percentual.replace('.', ',')}%)`;
                         }
                     }
                 }
             }
         },
-        plugins: [pluginTextoCentro]
+        plugins: [pluginCentroEPorcentagem]
     });
+
+    let legenda = document.getElementById(`${idCanvas}Legenda`);
+
+    if (!legenda) {
+        legenda = document.createElement('div');
+        legenda.id = `${idCanvas}Legenda`;
+        legenda.className = 'legenda-doughnut-organizada';
+        canvas.insertAdjacentElement('afterend', legenda);
+    }
+
+    function renderizarLegenda() {
+        legenda.innerHTML = labels.map((label, index) => {
+            const ativo = charts[idCanvas].getDataVisibility(index);
+
+            return `
+                <button type="button"
+                        class="legenda-doughnut-item ${ativo ? '' : 'inativo'}"
+                        data-index="${index}">
+                    <span class="legenda-cor" style="background:${cores[index % cores.length]}"></span>
+                    <span class="legenda-texto">${label}</span>
+                </button>
+            `;
+        }).join('');
+
+        legenda.querySelectorAll('.legenda-doughnut-item').forEach((item) => {
+            item.addEventListener('click', () => {
+                const index = Number(item.dataset.index);
+                const chart = charts[idCanvas];
+
+                chart.toggleDataVisibility(index);
+                chart.update();
+                renderizarLegenda();
+            });
+        });
+    }
+
+    renderizarLegenda();
 }
+
 function nomeCurtoFormacao(nome) {
     const texto = String(nome || '').toUpperCase();
 
@@ -356,6 +464,163 @@ function criarTreemapQualificacao(idCanvas, lista, tituloTooltip = 'Quantidade')
         }
     });
 }
+function padronizarNomeFormacao(nome) {
+    const texto = String(nome || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .trim();
+
+    if (texto.includes('NAO INFORMADO')) return 'Não informado';
+    if (texto.includes('POS GRADUACAO')) return 'Pós-graduação';
+    if (texto.includes('ESPECIALIZACAO')) return 'Especialização';
+    if (texto.includes('TECNICO DE NIVEL MEDIO')) return 'Técnico de nível médio';
+    if (texto.includes('CURSO TECNICO')) return 'Curso técnico';
+    if (texto.includes('NIVEL MEDIO COMPLETO')) return 'Nível médio completo';
+    if (texto.includes('NIVEL FUNDAMENTAL INCOMPLETO')) return 'Fundamental incompleto';
+    if (texto.includes('NIVEL FUNDAMENTAL COMPLETO')) return 'Fundamental completo';
+    if (texto.includes('SUPERIOR INCOMPLETO')) return 'Superior incompleto';
+    if (texto.includes('GRADUACAO')) return 'Graduação';
+    if (texto.includes('MESTRADO')) return 'Mestrado';
+    if (texto.includes('DOUTORADO')) return 'Doutorado';
+
+    return nome;
+}
+
+function criarGraficoQualificacaoHorizontal(idCanvas, lista, tituloTooltip = 'Servidores') {
+    const canvas = document.getElementById(idCanvas);
+    if (!canvas) return;
+
+    if (charts[idCanvas]) {
+        charts[idCanvas].destroy();
+    }
+
+    const dados = (lista || [])
+        .map((item) => ({
+            formacao: item.formacao || 'Não informado',
+            quantidade: Number(item.quantidade || 0)
+        }))
+        .filter((item) => item.quantidade > 0)
+        .sort((a, b) => b.quantidade - a.quantidade);
+
+    if (dados.length === 0) return;
+
+    const labels = dados.map((item) => padronizarNomeFormacao(item.formacao));
+    const valores = dados.map((item) => item.quantidade);
+
+    // ajusta a altura do canvas conforme a quantidade de linhas
+    const altura = Math.max(260, dados.length * 46);
+    canvas.style.height = `${altura}px`;
+
+    const pluginValorNaBarra = {
+        id: `valorNaBarra_${idCanvas}`,
+        afterDatasetsDraw(chart) {
+            const { ctx } = chart;
+            const meta = chart.getDatasetMeta(0);
+
+            ctx.save();
+            ctx.font = '700 12px Arial';
+            ctx.fillStyle = '#2b2b2b';
+            ctx.textBaseline = 'middle';
+
+            meta.data.forEach((bar, index) => {
+                const valor = valores[index];
+                const x = bar.x + 8;
+                const y = bar.y;
+
+                ctx.textAlign = 'left';
+                ctx.fillText(formatarNumero(valor), x, y);
+            });
+
+            ctx.restore();
+        }
+    };
+
+    charts[idCanvas] = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: tituloTooltip,
+                data: valores,
+                borderRadius: 8,
+                borderSkipped: false,
+                backgroundColor: [
+                    '#8f1d2c',
+                    '#b83242',
+                    '#cf4658',
+                    '#d9a441',
+                    '#1f7a64',
+                    '#475569',
+                    '#7c3aed',
+                    '#ea580c',
+                    '#0f766e',
+                    '#64748b',
+                    '#be123c',
+                    '#0369a1'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            layout: {
+                padding: {
+                    right: 45
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: '#171717',
+                    padding: 12,
+                    cornerRadius: 10,
+                    callbacks: {
+                        label: (context) => {
+                            const total = valores.reduce((soma, v) => soma + v, 0);
+                            const valor = Number(context.raw || 0);
+                            const percentual = total > 0 ? ((valor / total) * 100).toFixed(1) : '0.0';
+                            return `${context.label}: ${formatarNumero(valor)} (${percentual.replace('.', ',')}%)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0,0,0,0.08)',
+                        borderDash: [4, 4]
+                    },
+                    ticks: {
+                        color: '#6b7280',
+                        precision: 0
+                    }
+                },
+                y: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#4b5563',
+                        font: {
+                            size: 12,
+                            weight: '700'
+                        },
+                        callback: function(value) {
+                            const label = this.getLabelForValue(value);
+                            return label.length > 24 ? label.substring(0, 24) + '...' : label;
+        }
+    }
+}
+            }
+        },
+        plugins: [pluginValorNaBarra]
+    });
+}
 
 function atualizarModo(modo, usuario) {
     estado.modo = modo;
@@ -369,6 +634,7 @@ function atualizarModo(modo, usuario) {
     $('#btnExportar').classList.toggle('hidden', !admin);
     $('#btnLogout').classList.toggle('hidden', !admin);
     $('#secaoAdminLicencas').classList.toggle('hidden', !admin);
+    $('#secaoAdminServidores').classList.toggle('hidden', !admin);
 }
 
 function preencherTabelaLicencas(linhas) {
@@ -397,6 +663,123 @@ function preencherTabelaLicencas(linhas) {
     });
 }
 
+function normalizarTexto(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+}
+
+function preencherSelectFiltro(idSelect, linhas, campo, usarLabel = false) {
+    const select = document.getElementById(idSelect);
+    if (!select) return;
+
+    const valorAtual = select.value;
+
+    const valores = [...new Set(
+        (linhas || [])
+            .map((linha) => linha[campo])
+            .filter((valor) => valor !== null && valor !== undefined && String(valor).trim() !== '')
+    )].sort();
+
+    select.innerHTML = `<option value="">Todos</option>`;
+
+    valores.forEach((valor) => {
+        const option = document.createElement('option');
+        option.value = valor;
+        option.textContent = usarLabel ? (labelsPadrao[valor] || valor) : valor;
+        select.appendChild(option);
+    });
+
+    select.value = valorAtual;
+}
+
+function prepararFiltrosServidores(linhas) {
+    preencherSelectFiltro('filtroGrupoServidor', linhas, 'grupo_ocupacional', true);
+    preencherSelectFiltro('filtroSexoServidor', linhas, 'sexo', true);
+    preencherSelectFiltro('filtroSituacaoServidor', linhas, 'tipo_situacao');
+    preencherSelectFiltro('filtroVinculoServidor', linhas, 'vinculo_funcao');
+}
+
+function renderizarTabelaServidores(linhas) {
+    const tbody = document.getElementById('tabelaServidoresAdmin');
+    const contador = document.getElementById('qtdResultadoServidores');
+
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    if (contador) {
+        contador.textContent = `${formatarNumero(linhas.length)} registros`;
+    }
+
+    if (!linhas || linhas.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="13">Nenhum servidor encontrado.</td></tr>`;
+        return;
+    }
+
+    linhas.forEach((linha) => {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+            <td>${linha.matricula || '-'}</td>
+            <td>${linha.nome || '-'}</td>
+            <td>${labelsPadrao[linha.grupo_ocupacional] || linha.grupo_ocupacional || '-'}</td>
+            <td>${labelsPadrao[linha.cargo_fiscal] || linha.cargo_fiscal || '-'}</td>
+            <td>${labelsPadrao[linha.sexo] || linha.sexo || '-'}</td>
+            <td>${linha.idade ?? '-'}</td>
+            <td>${linha.vinculo_funcao || '-'}</td>
+            <td>${linha.cargo || '-'}</td>
+            <td>${linha.funcao || '-'}</td>
+            <td>${linha.formacao || '-'}</td>
+            <td>${Number(linha.efetivo) === 1 ? 'SIM' : 'NÃO'}</td>
+            <td>${Number(linha.em_gestao) === 1 ? 'SIM' : 'NÃO'}</td>
+            <td>${linha.tipo_situacao || linha.situacao_servidor || '-'}</td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+}
+
+function aplicarFiltrosServidores() {
+    const busca = normalizarTexto(document.getElementById('filtroServidor')?.value);
+    const grupo = document.getElementById('filtroGrupoServidor')?.value || '';
+    const sexo = document.getElementById('filtroSexoServidor')?.value || '';
+    const situacao = document.getElementById('filtroSituacaoServidor')?.value || '';
+    const vinculo = document.getElementById('filtroVinculoServidor')?.value || '';
+
+    let filtrados = servidoresAdminCache.filter((linha) => {
+        const textoBusca = normalizarTexto([
+            linha.matricula,
+            linha.nome,
+            linha.grupo_ocupacional,
+            linha.cargo_fiscal,
+            linha.cargo,
+            linha.funcao,
+            linha.vinculo_funcao,
+            linha.formacao,
+            linha.tipo_situacao
+        ].join(' '));
+
+        if (busca && !textoBusca.includes(busca)) return false;
+        if (grupo && linha.grupo_ocupacional !== grupo) return false;
+        if (sexo && linha.sexo !== sexo) return false;
+        if (situacao && linha.tipo_situacao !== situacao) return false;
+        if (vinculo && linha.vinculo_funcao !== vinculo) return false;
+
+        return true;
+    });
+
+    renderizarTabelaServidores(filtrados);
+}
+
+function preencherTabelaServidoresAdmin(linhas) {
+    servidoresAdminCache = linhas || [];
+    prepararFiltrosServidores(servidoresAdminCache);
+    aplicarFiltrosServidores();
+}
+
 function renderizarDashboard(payload) {
     const dados = payload.dados;
     atualizarModo(payload.modo, payload.usuario);
@@ -416,8 +799,10 @@ function renderizarDashboard(payload) {
 
     $('#qtdAuditores').textContent = formatarNumero(valorPorChave(totalPorGrupo, 'grupo_ocupacional', 'AUDITOR'));
     $('#qtdTecnicos').textContent = formatarNumero(valorPorChave(totalPorGrupo, 'grupo_ocupacional', 'TECNICO'));
+    $('#qtdEfetivosNaoFiscais').textContent = formatarNumero(dados.total_efetivos_nao_fiscais || 0);
     $('#qtdComissionados').textContent = formatarNumero(valorPorChave(totalPorGrupo, 'grupo_ocupacional', 'COMISSIONADO'));
     $('#qtdTerceirizados').textContent = formatarNumero(valorPorChave(totalPorGrupo, 'grupo_ocupacional', 'TERCEIRIZADO'));
+    $('#qtdEstagiarios').textContent = formatarNumero(valorPorChave(totalPorGrupo, 'grupo_ocupacional', 'ESTAGIARIO'));
     $('#idadeMedia').textContent = dados.idade_media_geral ? `${String(dados.idade_media_geral).replace('.', ',')} anos` : '-';
 
     $('#qtdAuditoresBloco').textContent = formatarNumero(valorPorChave(totalPorGrupo, 'grupo_ocupacional', 'AUDITOR'));
@@ -436,7 +821,7 @@ function renderizarDashboard(payload) {
     $('#auditores60Percentual').textContent = `${String(auditores60.percentual_60 || 0).replace('.', ',')}%`;
 
     $('#qtdAFTE').textContent = formatarNumero(valorPorChave(auditoresPorCargo, 'cargo_fiscal', 'AFTE'));
-    $('#qtdAFTME').textContent = formatarNumero(valorPorChave(auditoresPorCargo, 'cargo_fiscal', 'AFTME'));
+    $('#qtdAFTMT').textContent = formatarNumero(valorPorChave(auditoresPorCargo, 'cargo_fiscal', 'AFTMT'));
 
     $('#qtdAuditoresHomens').textContent = formatarNumero(valorPorChave(sexoAuditores, 'sexo', 'M'));
     $('#qtdAuditoresMulheres').textContent = formatarNumero(valorPorChave(sexoAuditores, 'sexo', 'F'));
@@ -454,18 +839,11 @@ function renderizarDashboard(payload) {
     $('#licencaCidF').textContent = formatarNumero(licencas.servidores_com_cid_f);
 
     criarDoughnutModerno(
-    'chartGrupos',
+       'chartGrupos',
     totalPorGrupo.map((x) => labelsPadrao[x.grupo_ocupacional] || x.grupo_ocupacional),
     totalPorGrupo.map((x) => Number(x.quantidade || 0))
 );
 
-    criarOuAtualizarChart(
-        'chartCargos',
-        'bar',
-        auditoresPorCargo.map((x) => labelsPadrao[x.cargo_fiscal] || x.cargo_fiscal),
-        auditoresPorCargo.map((x) => Number(x.quantidade || 0)),
-        { label: 'Auditores' }
-    );
 
     criarOuAtualizarChart(
         'chartClasseNivel',
@@ -479,9 +857,13 @@ function renderizarDashboard(payload) {
             },
         }
     );
-    criarTreemapQualificacao('chartQualificacaoForca', qualificacaoForca, 'Servidores');
-    criarTreemapQualificacao('chartQualificacaoFiscais', qualificacaoFiscais, 'Fiscais');
+
+    criarGraficoQualificacaoHorizontal('chartQualificacaoForca', qualificacaoForca, 'Servidores');
+    
+criarGraficoQualificacaoHorizontal('chartQualificacaoFiscais', qualificacaoFiscais, 'Fiscais');
+
     preencherTabelaLicencas(dados.detalhes_licencas_admin || []);
+    preencherTabelaServidoresAdmin(dados.servidores_admin || []);
 }
 
 async function carregarDashboard() {
@@ -542,5 +924,34 @@ $('#modalLogin').addEventListener('click', (event) => {
 });
 $('#formLogin').addEventListener('submit', fazerLogin);
 $('#btnLogout').addEventListener('click', sair);
+
+[
+    '#filtroServidor',
+    '#filtroGrupoServidor',
+    '#filtroSexoServidor',
+    '#filtroSituacaoServidor',
+    '#filtroVinculoServidor'
+].forEach((selector) => {
+    const elemento = document.querySelector(selector);
+
+    if (!elemento) return;
+
+    elemento.addEventListener('input', aplicarFiltrosServidores);
+    elemento.addEventListener('change', aplicarFiltrosServidores);
+});
+
+const btnLimparFiltrosServidores = document.getElementById('btnLimparFiltrosServidores');
+
+if (btnLimparFiltrosServidores) {
+    btnLimparFiltrosServidores.addEventListener('click', () => {
+        document.getElementById('filtroServidor').value = '';
+        document.getElementById('filtroGrupoServidor').value = '';
+        document.getElementById('filtroSexoServidor').value = '';
+        document.getElementById('filtroSituacaoServidor').value = '';
+        document.getElementById('filtroVinculoServidor').value = '';
+
+        aplicarFiltrosServidores();
+    });
+}
 
 carregarDashboard();
