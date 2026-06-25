@@ -506,15 +506,23 @@ input:focus {
     }
 
     .logo-topo .logo-box {
-        width: 100%;
-        max-width: 360px;
-        height: 95px;
-    }
+    width: 100%;
+    max-width: 360px;
+    height: auto;
+    min-height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+}
 
-    .logo-topo .logo-box img {
-        transform: scale(1.6);
-        transform-origin: left center;
-    }
+.logo-topo .logo-box img {
+    width: 100%;
+    height: auto;
+    max-height: 95px;
+    object-fit: contain;
+    transform: none;
+}
 }
 
 .ranking-qualificacao {
@@ -809,4 +817,276 @@ input:focus {
     .filtros-admin {
         grid-template-columns: 1fr;
     }
+}
+/* MOBILE - LISTA DE SERVIDORES EM FORMATO DE CARD */
+@media (max-width: 720px) {
+    #secaoAdminServidores .table-wrap {
+        overflow-x: visible !important;
+    }
+
+    #secaoAdminServidores table {
+        min-width: 0 !important;
+        width: 100% !important;
+        border-collapse: separate !important;
+        border-spacing: 0 12px !important;
+    }
+
+    #secaoAdminServidores thead {
+        display: none !important;
+    }
+
+    #secaoAdminServidores tbody,
+    #secaoAdminServidores tr,
+    #secaoAdminServidores td {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    #secaoAdminServidores tr {
+        background: #ffffff;
+        border: 1px solid rgba(143, 29, 44, .12);
+        border-radius: 16px;
+        padding: 12px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, .06);
+        margin-bottom: 12px;
+    }
+
+    #secaoAdminServidores td {
+        border-bottom: 1px solid #eeeeee;
+        padding: 9px 0 !important;
+        white-space: normal !important;
+        font-size: 13px;
+        line-height: 1.35;
+    }
+
+    #secaoAdminServidores td:last-child {
+        border-bottom: none;
+    }
+
+    #secaoAdminServidores td::before {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 11px;
+        font-weight: 900;
+        color: #8f1d2c;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    #secaoAdminServidores td:nth-child(1)::before {
+        content: "Matrícula";
+    }
+
+    #secaoAdminServidores td:nth-child(2)::before {
+        content: "Nome";
+    }
+
+    #secaoAdminServidores td:nth-child(3)::before {
+        content: "Grupo";
+    }
+
+    #secaoAdminServidores td:nth-child(4)::before {
+        content: "Cargo fiscal";
+    }
+
+    #secaoAdminServidores td:nth-child(5)::before {
+        content: "Sexo";
+    }
+
+    #secaoAdminServidores td:nth-child(6)::before {
+        content: "Idade";
+    }
+
+    #secaoAdminServidores td:nth-child(7)::before {
+        content: "Vínculo";
+    }
+
+    #secaoAdminServidores td:nth-child(8)::before {
+        content: "Cargo";
+    }
+
+    #secaoAdminServidores td:nth-child(9)::before {
+        content: "Função";
+    }
+
+    #secaoAdminServidores td:nth-child(10)::before {
+        content: "Formação";
+    }
+
+    #secaoAdminServidores td:nth-child(11)::before {
+        content: "Efetivo?";
+    }
+
+    #secaoAdminServidores td:nth-child(12)::before {
+        content: "Gestão?";
+    }
+
+    #secaoAdminServidores td:nth-child(13)::before {
+        content: "Situação";
+    }
+
+    #secaoAdminServidores td:nth-child(2) {
+        font-size: 15px;
+        font-weight: 800;
+        color: #2b2b2b;
+    }
+}/* TODOS OS SERVIDORES - VISUAL DE CARD NO DESKTOP E MOBILE */
+#secaoAdminServidores .table-wrap {
+    overflow-x: visible !important;
+}
+
+#secaoAdminServidores table {
+    min-width: 0 !important;
+    width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 14px !important;
+}
+
+#secaoAdminServidores thead {
+    display: none !important;
+}
+
+#secaoAdminServidores tbody,
+#secaoAdminServidores tr,
+#secaoAdminServidores td {
+    display: block !important;
+    width: 100% !important;
+}
+
+/* Card resumido */
+#secaoAdminServidores .linha-servidor-resumo {
+    max-width: 620px;
+    margin: 0 auto 12px;
+    background: #ffffff;
+    border: 1px solid rgba(143, 29, 44, .14);
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+}
+
+#secaoAdminServidores .linha-servidor-resumo td {
+    border-bottom: 1px solid #eeeeee !important;
+    padding: 10px 0 !important;
+    white-space: normal !important;
+    font-size: 14px;
+    line-height: 1.35;
+}
+
+#secaoAdminServidores .linha-servidor-resumo td:last-child {
+    border-bottom: none !important;
+}
+
+#secaoAdminServidores .linha-servidor-resumo td::before {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 900;
+    color: #8f1d2c;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+#secaoAdminServidores .linha-servidor-resumo td:nth-child(1)::before {
+    content: "Matrícula";
+}
+
+#secaoAdminServidores .linha-servidor-resumo td:nth-child(2)::before {
+    content: "Nome";
+}
+
+#secaoAdminServidores .linha-servidor-resumo td:nth-child(3)::before {
+    content: "Grupo";
+}
+
+#secaoAdminServidores .linha-servidor-resumo td:nth-child(4)::before {
+    content: "Situação";
+}
+
+/* Botão do nome */
+.btn-nome-servidor {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    color: #2b2b2b;
+    font-size: 17px;
+    font-weight: 900;
+    line-height: 1.25;
+    text-transform: uppercase;
+}
+
+.btn-nome-servidor:hover,
+.btn-nome-servidor.aberto {
+    color: var(--vinho);
+    text-decoration: underline;
+}
+
+/* Garante que o detalhe só aparece quando clicar */
+#secaoAdminServidores .linha-servidor-detalhes.hidden {
+    display: none !important;
+}
+
+#secaoAdminServidores .linha-servidor-detalhes:not(.hidden) {
+    display: block !important;
+    max-width: 620px;
+    margin: -4px auto 16px;
+}
+
+#secaoAdminServidores .linha-servidor-detalhes td {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+/* Card completo aberto */
+.card-detalhe-servidor {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    background: #ffffff;
+    border: 1px solid rgba(143, 29, 44, .14);
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+}
+
+.card-detalhe-servidor > div {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid #eeeeee !important;
+    border-radius: 0 !important;
+    padding: 11px 0 !important;
+}
+
+.card-detalhe-servidor > div:last-child {
+    border-bottom: none !important;
+}
+
+.card-detalhe-servidor span {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 11px;
+    font-weight: 900;
+    color: #8f1d2c;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+
+.card-detalhe-servidor strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #2b2b2b;
+    line-height: 1.35;
+    overflow-wrap: break-word;
+}
+
+.card-detalhe-servidor > div:nth-child(2) strong {
+    font-size: 18px;
+    font-weight: 900;
+    text-transform: uppercase;
 }

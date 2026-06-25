@@ -143,12 +143,12 @@ require __DIR__ . '/../config/auth.php';
                     <div>
                         <span>AFTE</span>
                         <strong id="qtdAFTE">0</strong>
-                        <small>Estabelecimento</small>
+                        
                     </div>
                     <div>
                         <span>AFTMT</span>
                         <strong id="qtdAFTMT">0</strong>
-                        <small>Mercadoria em Trânsito</small>
+                        
                     </div>
                 </div>
             </article>

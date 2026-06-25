@@ -715,30 +715,116 @@ function renderizarTabelaServidores(linhas) {
     }
 
     if (!linhas || linhas.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="13">Nenhum servidor encontrado.</td></tr>`;
+        tbody.innerHTML = `<tr><td>Nenhum servidor encontrado.</td></tr>`;
         return;
     }
 
-    linhas.forEach((linha) => {
-        const tr = document.createElement('tr');
+    linhas.forEach((linha, index) => {
+        const idDetalhe = `detalheServidor_${index}`;
 
-        tr.innerHTML = `
+        const trResumo = document.createElement('tr');
+        trResumo.className = 'linha-servidor-resumo';
+
+        trResumo.innerHTML = `
             <td>${linha.matricula || '-'}</td>
-            <td>${linha.nome || '-'}</td>
+            <td>
+                <button type="button" class="btn-nome-servidor" data-target="${idDetalhe}">
+                    ${linha.nome || '-'}
+                </button>
+            </td>
             <td>${labelsPadrao[linha.grupo_ocupacional] || linha.grupo_ocupacional || '-'}</td>
-            <td>${labelsPadrao[linha.cargo_fiscal] || linha.cargo_fiscal || '-'}</td>
-            <td>${labelsPadrao[linha.sexo] || linha.sexo || '-'}</td>
-            <td>${linha.idade ?? '-'}</td>
-            <td>${linha.vinculo_funcao || '-'}</td>
-            <td>${linha.cargo || '-'}</td>
-            <td>${linha.funcao || '-'}</td>
-            <td>${linha.formacao || '-'}</td>
-            <td>${Number(linha.efetivo) === 1 ? 'SIM' : 'NÃO'}</td>
-            <td>${Number(linha.em_gestao) === 1 ? 'SIM' : 'NÃO'}</td>
             <td>${linha.tipo_situacao || linha.situacao_servidor || '-'}</td>
         `;
 
-        tbody.appendChild(tr);
+        const trDetalhe = document.createElement('tr');
+        trDetalhe.id = idDetalhe;
+        trDetalhe.className = 'linha-servidor-detalhes hidden';
+
+        trDetalhe.innerHTML = `
+            <td colspan="4">
+                <div class="card-detalhe-servidor">
+                    <div>
+                        <span>Matrícula</span>
+                        <strong>${linha.matricula || '-'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Nome</span>
+                        <strong>${linha.nome || '-'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Grupo</span>
+                        <strong>${labelsPadrao[linha.grupo_ocupacional] || linha.grupo_ocupacional || '-'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Cargo fiscal</span>
+                        <strong>${labelsPadrao[linha.cargo_fiscal] || linha.cargo_fiscal || '-'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Sexo</span>
+                        <strong>${labelsPadrao[linha.sexo] || linha.sexo || '-'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Idade</span>
+                        <strong>${linha.idade ?? '-'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Vínculo</span>
+                        <strong>${linha.vinculo_funcao || '-'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Cargo</span>
+                        <strong>${linha.cargo || '-'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Função</span>
+                        <strong>${linha.funcao || '-'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Formação</span>
+                        <strong>${linha.formacao || '-'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Efetivo?</span>
+                        <strong>${Number(linha.efetivo) === 1 ? 'SIM' : 'NÃO'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Gestão?</span>
+                        <strong>${Number(linha.em_gestao) === 1 ? 'SIM' : 'NÃO'}</strong>
+                    </div>
+
+                    <div>
+                        <span>Situação</span>
+                        <strong>${linha.tipo_situacao || linha.situacao_servidor || '-'}</strong>
+                    </div>
+                </div>
+            </td>
+        `;
+
+        tbody.appendChild(trResumo);
+        tbody.appendChild(trDetalhe);
+    });
+
+    tbody.querySelectorAll('.btn-nome-servidor').forEach((botao) => {
+        botao.addEventListener('click', () => {
+            const idDetalhe = botao.dataset.target;
+            const detalhe = document.getElementById(idDetalhe);
+
+            if (!detalhe) return;
+
+            detalhe.classList.toggle('hidden');
+            botao.classList.toggle('aberto');
+        });
     });
 }
 
